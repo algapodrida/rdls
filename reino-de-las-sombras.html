@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reino de las Sombras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0806;
+    --bg-dark: #100d0a;
+    --bg-mid: #1a1410;
+    --bg-light: #241c16;
+    --parchment: #c8a96e;
+    --parchment-light: #e8c98e;
+    --parchment-dark: #9a7a4a;
+    --crimson: #8b1a1a;
+    --crimson-bright: #c0392b;
+    --gold: #c9a227;
+    --gold-bright: #f0c040;
+    --gold-dim: #7a6010;
+    --silver: #8a9aaa;
+    --shadow: rgba(0,0,0,0.8);
+    --glow-gold: 0 0 20px rgba(201,162,39,0.4);
+    --glow-red: 0 0 15px rgba(139,26,26,0.5);
+    --text-light: #e8d5b0;
+    --text-dim: #9a8060;
+    --border: rgba(201,162,39,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-light);
+    font-family: 'Cinzel', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(139,26,26,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(201,162,39,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(26,20,16,0.9) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Noise texture overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ═══════ HEADER ═══════ */
+  .header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 20px 20px 0;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(to bottom, rgba(10,8,6,0.95), rgba(16,13,10,0.8));
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .game-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,162,39,0.6), 0 2px 4px rgba(0,0,0,0.9);
+    letter-spacing: 3px;
+    animation: titlePulse 4s ease-in-out infinite;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 30px rgba(201,162,39,0.6), 0 2px 4px rgba(0,0,0,0.9); }
+    50% { text-shadow: 0 0 50px rgba(201,162,39,0.9), 0 2px 4px rgba(0,0,0,0.9); }
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dark);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .top-resources {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .resource-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(36,28,22,0.9);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    color: var(--parchment);
+    min-width: 80px;
+  }
+
+  .resource-chip .icon { font-size: 1rem; }
+  .resource-chip .val { color: var(--gold-bright); font-weight: 700; }
+
+  .turn-info {
+    text-align: left;
+    min-width: 150px;
+  }
+
+  .turn-num {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 1.2rem;
+    color: var(--gold);
+  }
+
+  .king-name {
+    font-size: 0.7rem;
+    color: var(--parchment-dark);
+    font-style: italic;
+  }
+
+  /* Tabs nav */
+  .tabs-nav {
+    display: flex;
+    gap: 0;
+    justify-content: center;
+    margin-top: 16px;
+    position: relative;
+    z-index: 10;
+    border-bottom: none;
+  }
+
+  .tab-btn {
+    background: rgba(20,16,12,0.8);
+    border: 1px solid rgba(201,162,39,0.2);
+    border-bottom: none;
+    color: var(--text-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .tab-btn:hover { color: var(--parchment); background: rgba(36,28,22,0.9); }
+  .tab-btn.active {
+    background: var(--bg-mid);
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    position: relative;
+  }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--bg-mid);
+  }
+
+  /* ═══════ MAIN LAYOUT ═══════ */
+  .main {
+    position: relative;
+    z-index: 5;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 16px;
+    min-height: calc(100vh - 140px);
+  }
+
+  .panel {
+    background: linear-gradient(135deg, rgba(26,20,16,0.95), rgba(20,15,10,0.98));
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 0.75rem;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(201,162,39,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title .icon { font-size: 1rem; }
+
+  /* Tab panels */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ═══════ KINGDOM MAP (center) ═══════ */
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .map-container {
+    background: linear-gradient(135deg, rgba(16,12,8,0.98), rgba(20,16,10,0.95));
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .map-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 0.8rem;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    aspect-ratio: 5/4;
+  }
+
+  .map-cell {
+    background: rgba(10,8,6,0.8);
+    border: 1px solid rgba(201,162,39,0.15);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    padding: 8px 4px 4px;
+    min-height: 70px;
+    font-size: 1.6rem;
+  }
+
+  .map-cell:hover {
+    border-color: var(--gold);
+    background: rgba(36,28,22,0.9);
+    box-shadow: inset 0 0 15px rgba(201,162,39,0.1), 0 0 10px rgba(201,162,39,0.2);
+    transform: scale(1.03);
+  }
+
+  .map-cell.owned {
+    border-color: rgba(201,162,39,0.4);
+    background: rgba(30,22,14,0.9);
+  }
+
+  .map-cell.capital {
+    border-color: var(--gold);
+    background: rgba(40,30,15,0.9);
+    box-shadow: inset 0 0 20px rgba(201,162,39,0.15);
+  }
+
+  .map-cell.enemy {
+    border-color: rgba(139,26,26,0.5);
+    background: rgba(20,8,8,0.9);
+  }
+
+  .map-cell.neutral {
+    opacity: 0.7;
+  }
+
+  .cell-label {
+    font-size: 0.45rem;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-top: 2px;
+    font-family: 'Cinzel', serif;
+  }
+
+  .cell-pop {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: 0.4rem;
+    color: var(--parchment-dark);
+    font-family: 'Cinzel', serif;
+  }
+
+  /* ═══════ ACTIONS ═══════ */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .action-btn {
+    background: linear-gradient(135deg, rgba(36,28,22,0.9), rgba(26,18,10,0.95));
+    border: 1px solid rgba(201,162,39,0.25);
+    border-radius: 3px;
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    color: var(--text-light);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .action-btn:hover:not(:disabled) {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, rgba(50,38,26,0.95), rgba(40,28,16,0.98));
+    box-shadow: var(--glow-gold);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .action-btn .a-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .action-btn .a-name { font-size: 0.65rem; letter-spacing: 1px; color: var(--parchment); display: block; }
+  .action-btn .a-cost { font-size: 0.55rem; color: var(--gold-dim); display: block; margin-top: 2px; }
+
+  .action-btn.danger { border-color: rgba(139,26,26,0.4); }
+  .action-btn.danger:hover:not(:disabled) {
+    border-color: var(--crimson-bright);
+    box-shadow: var(--glow-red);
+  }
+
+  /* ═══════ BUILDINGS ═══════ */
+  .building-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(201,162,39,0.15);
+    border-radius: 3px;
+    background: rgba(16,12,8,0.6);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .building-item:hover {
+    border-color: var(--gold-dim);
+    background: rgba(30,22,14,0.8);
+  }
+
+  .building-icon { font-size: 1.5rem; width: 36px; text-align: center; }
+
+  .building-info { flex: 1; }
+  .building-name {
+    font-size: 0.7rem;
+    color: var(--parchment);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .building-desc { font-size: 0.55rem; color: var(--text-dim); font-family: 'IM Fell English', serif; font-style: italic; }
+  .building-level { font-size: 0.6rem; color: var(--gold); }
+
+  .build-btn {
+    background: rgba(201,162,39,0.1);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .build-btn:hover { background: rgba(201,162,39,0.2); }
+  .build-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ═══════ EVENTS / LOG ═══════ */
+  .event-log {
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-dim) transparent;
+  }
+
+  .event-entry {
+    padding: 6px 8px;
+    border-left: 2px solid var(--gold-dim);
+    margin-bottom: 6px;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.7rem;
+    color: var(--text-light);
+    background: rgba(16,12,8,0.4);
+    animation: fadeIn 0.4s ease;
+    line-height: 1.4;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: none; } }
+
+  .event-entry.warning { border-left-color: var(--crimson); color: #ff9090; }
+  .event-entry.success { border-left-color: var(--gold); color: var(--parchment-light); }
+  .event-entry.info { border-left-color: var(--silver); color: var(--silver); }
+
+  .event-turn { font-size: 0.55rem; color: var(--text-dim); margin-bottom: 2px; }
+
+  /* ═══════ STATS BARS ═══════ */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    width: 80px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .stat-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(10,8,6,0.8);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .stat-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .stat-fill.gold-fill { background: linear-gradient(to right, var(--gold-dim), var(--gold)); }
+  .stat-fill.red-fill { background: linear-gradient(to right, #5a1010, var(--crimson)); }
+  .stat-fill.green-fill { background: linear-gradient(to right, #1a4a1a, #3a8a3a); }
+  .stat-fill.blue-fill { background: linear-gradient(to right, #1a2a5a, #3a5aaa); }
+
+  .stat-val { font-size: 0.6rem; color: var(--parchment); width: 40px; text-align: right; }
+
+  /* ═══════ ARMY ═══════ */
+  .unit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .unit-left { display: flex; align-items: center; gap: 8px; }
+  .unit-icon { font-size: 1.2rem; }
+  .unit-name { font-size: 0.65rem; color: var(--parchment); }
+  .unit-count { font-size: 1rem; color: var(--gold); font-weight: 700; }
+  .unit-cost { font-size: 0.55rem; color: var(--text-dim); }
+
+  .recruit-btn {
+    background: rgba(201,162,39,0.1);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: 'Cinzel', serif;
+    transition: all 0.2s;
+  }
+
+  .recruit-btn:hover { background: rgba(201,162,39,0.2); }
+
+  /* ═══════ DIPLOMACY ═══════ */
+  .faction-card {
+    background: rgba(16,12,8,0.7);
+    border: 1px solid rgba(201,162,39,0.2);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  .faction-name {
+    font-size: 0.7rem;
+    color: var(--parchment);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .faction-rel {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 0.55rem;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+
+  .rel-ally { background: rgba(40,100,40,0.4); color: #70d070; border: 1px solid rgba(40,160,40,0.4); }
+  .rel-neutral { background: rgba(100,90,40,0.4); color: #d0c070; border: 1px solid rgba(160,140,40,0.4); }
+  .rel-hostile { background: rgba(100,30,30,0.4); color: #d07070; border: 1px solid rgba(160,40,40,0.4); }
+  .rel-war { background: rgba(150,20,20,0.6); color: #ff6060; border: 1px solid rgba(200,30,30,0.6); }
+
+  .faction-actions { display: flex; gap: 6px; margin-top: 6px; }
+  .diplo-btn {
+    flex: 1;
+    background: rgba(36,28,22,0.8);
+    border: 1px solid rgba(201,162,39,0.2);
+    color: var(--text-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .diplo-btn:hover { color: var(--parchment); border-color: var(--gold-dim); }
+
+  /* ═══════ MODALS ═══════ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    display: none;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: linear-gradient(135deg, var(--bg-mid), var(--bg-dark));
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 0 30px rgba(201,162,39,0.1);
+    animation: modalIn 0.3s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+  }
+
+  .modal-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 1rem;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+  }
+
+  .modal-text {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .modal-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .modal-btn {
+    background: rgba(201,162,39,0.1);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    padding: 8px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .modal-btn:hover { background: rgba(201,162,39,0.25); }
+  .modal-btn.cancel { border-color: rgba(255,255,255,0.1); color: var(--text-dim); }
+  .modal-btn.danger-btn { border-color: var(--crimson); color: #ff8080; background: rgba(139,26,26,0.15); }
+  .modal-btn.danger-btn:hover { background: rgba(139,26,26,0.3); }
+
+  /* ═══════ THRONE ROOM PANEL ═══════ */
+  .throne-art {
+    text-align: center;
+    font-size: 4rem;
+    margin: 10px 0;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px rgba(201,162,39,0.4));
+  }
+
+  .big-stat {
+    text-align: center;
+    margin: 8px 0;
+  }
+
+  .big-stat .big-val {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 2rem;
+    color: var(--gold);
+    display: block;
+    text-shadow: var(--glow-gold);
+  }
+
+  .big-stat .big-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* End turn button */
+  .end-turn-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(100,60,10,0.6), rgba(80,40,5,0.8));
+    border: 1px solid var(--gold-dim);
+    color: var(--gold-bright);
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.3s;
+    margin-top: 12px;
+    text-shadow: 0 0 10px rgba(240,192,64,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .end-turn-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(to right, transparent, rgba(201,162,39,0.1), transparent);
+    transition: left 0.5s;
+  }
+
+  .end-turn-btn:hover::before { left: 100%; }
+  .end-turn-btn:hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(201,162,39,0.3);
+    background: linear-gradient(135deg, rgba(120,75,15,0.7), rgba(100,55,8,0.9));
+  }
+
+  /* Tooltip */
+  .tooltip { position: relative; }
+  .tooltip:hover .tip {
+    display: block;
+  }
+  .tip {
+    display: none;
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,8,6,0.95);
+    border: 1px solid var(--gold-dim);
+    color: var(--parchment);
+    font-size: 0.6rem;
+    padding: 6px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+  /* Flash animation */
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .flash { animation: flash 0.3s ease 2; }
+
+  .ornament {
+    color: var(--gold-dim);
+    font-size: 0.8rem;
+    margin: 0 4px;
+  }
+
+  .research-item {
+    padding: 8px;
+    border: 1px solid rgba(201,162,39,0.15);
+    border-radius: 3px;
+    margin-bottom: 8px;
+    background: rgba(16,12,8,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .research-item:hover { border-color: var(--gold-dim); background: rgba(30,22,14,0.8); }
+  .research-item.researched { opacity: 0.5; border-style: dashed; }
+  .research-item .r-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .research-item .r-info { flex: 1; }
+  .research-item .r-name { font-size: 0.65rem; color: var(--parchment); letter-spacing: 1px; }
+  .research-item .r-desc { font-size: 0.55rem; color: var(--text-dim); font-family: 'IM Fell English', serif; font-style: italic; }
+  .research-item .r-cost { font-size: 0.55rem; color: var(--gold-dim); margin-top: 2px; }
+  .research-item .r-done { font-size: 0.6rem; color: #4aaa4a; }
+
+  /* Portrait */
+  .portrait {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-dim);
+    background: rgba(30,22,14,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  /* notification badge */
+  .badge {
+    display: inline-block;
+    background: var(--crimson);
+    color: white;
+    border-radius: 50%;
+    width: 14px; height: 14px;
+    font-size: 0.55rem;
+    text-align: center;
+    line-height: 14px;
+    margin-left: 4px;
+    animation: flash 1s infinite;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="turn-info">
+      <div class="turn-num">🕯️ Año <span id="turnYear">1</span></div>
+      <div class="king-name" id="kingTitle">Rey Maldrath I el Oscuro</div>
+    </div>
+
+    <div>
+      <div class="game-title">⚜ Reino de las Sombras ⚜</div>
+      <div class="subtitle">Domina la oscuridad. Gobierna con hierro y sangre.</div>
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('realm')">⚔ Reino</button>
+        <button class="tab-btn" onclick="switchTab('build')">🏰 Construcción</button>
+        <button class="tab-btn" onclick="switchTab('army')">🗡 Ejército</button>
+        <button class="tab-btn" onclick="switchTab('research')">📜 Saberes</button>
+        <button class="tab-btn" onclick="switchTab('diplo')">🤝 Diplomacia</button>
+      </div>
+    </div>
+
+    <div class="top-resources">
+      <div class="resource-chip"><span class="icon">💰</span><div><div style="font-size:0.55rem">ORO</div><div class="val" id="resGold">500</div></div></div>
+      <div class="resource-chip"><span class="icon">🌾</span><div><div style="font-size:0.55rem">GRANO</div><div class="val" id="resFood">300</div></div></div>
+      <div class="resource-chip"><span class="icon">🪵</span><div><div style="font-size:0.55rem">MADERA</div><div class="val" id="resWood">200</div></div></div>
+      <div class="resource-chip"><span class="icon">⚙️</span><div><div style="font-size:0.55rem">HIERRO</div><div class="val" id="resIron">100</div></div></div>
+      <div class="resource-chip"><span class="icon">🔮</span><div><div style="font-size:0.55rem">MAGIA</div><div class="val" id="resMana">50</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: REINO -->
+<div id="tab-realm" class="tab-panel active">
+<div class="main">
+  <!-- Left panel: Kingdom stats -->
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">👑</span> Estado del Reino</div>
+      <div class="throne-art">🏰</div>
+
+      <div class="stat-row">
+        <div class="stat-label">POBLACIÓN</div>
+        <div class="stat-bar"><div class="stat-fill blue-fill" id="popBar" style="width:45%"></div></div>
+        <div class="stat-val" id="popVal">4.5k</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">SATISFACCIÓN</div>
+        <div class="stat-bar"><div class="stat-fill green-fill" id="happyBar" style="width:70%"></div></div>
+        <div class="stat-val" id="happyVal">70%</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">PODER MIL.</div>
+        <div class="stat-bar"><div class="stat-fill red-fill" id="milBar" style="width:30%"></div></div>
+        <div class="stat-val" id="milVal">30%</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label">MAGIA</div>
+        <div class="stat-bar"><div class="stat-fill gold-fill" id="magBar" style="width:20%"></div></div>
+        <div class="stat-val" id="magVal">20%</div>
+      </div>
+
+      <hr class="modal-divider">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;margin-bottom:12px">
+        <div><div style="font-size:1.2rem;color:var(--gold)" id="territoriesCount">3</div><div style="font-size:0.55rem;color:var(--text-dim);letter-spacing:1px">TERRITORIOS</div></div>
+        <div><div style="font-size:1.2rem;color:var(--gold)" id="armyCount">120</div><div style="font-size:0.55rem;color:var(--text-dim);letter-spacing:1px">SOLDADOS</div></div>
+        <div><div style="font-size:1.2rem;color:var(--gold)" id="incomeCount">+85</div><div style="font-size:0.55rem;color:var(--text-dim);letter-spacing:1px">RENTA/AÑO</div></div>
+        <div><div style="font-size:1.2rem;color:var(--gold)" id="powerScore">847</div><div style="font-size:0.55rem;color:var(--text-dim);letter-spacing:1px">PODER</div></div>
+      </div>
+
+      <button class="end-turn-btn" onclick="endTurn()">⏳ PASAR AÑO ⏳</button>
+    </div>
+  </div>
+
+  <!-- Center: Map + Events -->
+  <div class="center-panel">
+    <div class="map-container">
+      <div class="map-title">✦ MAPA DEL CONTINENTE SOMBRAL ✦</div>
+      <div class="map-grid" id="mapGrid"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="panel">
+      <div class="panel-title"><span class="icon">⚡</span> Acciones del Soberano</div>
+      <div class="actions-grid">
+        <button class="action-btn" onclick="doAction('tax')">
+          <span class="a-icon">💰</span>
+          <span class="a-name">COBRAR IMPUESTOS</span>
+          <span class="a-cost">+50–200 oro | -5 satisf.</span>
+        </button>
+        <button class="action-btn" onclick="doAction('feast')">
+          <span class="a-icon">🍖</span>
+          <span class="a-name">BANQUETE REAL</span>
+          <span class="a-cost">-100 oro | +15 satisf.</span>
+        </button>
+        <button class="action-btn" onclick="doAction('trade')">
+          <span class="a-icon">🛒</span>
+          <span class="a-name">MERCADO NEGRO</span>
+          <span class="a-cost">-50 oro | +80 madera/hierro</span>
+        </button>
+        <button class="action-btn" onclick="doAction('ritual')">
+          <span class="a-icon">🔮</span>
+          <span class="a-name">RITUAL OSCURO</span>
+          <span class="a-cost">-30 oro | +40 magia</span>
+        </button>
+        <button class="action-btn" onclick="doAction('spy')">
+          <span class="a-icon">🕵️</span>
+          <span class="a-name">ESPIONAJE</span>
+          <span class="a-cost">-80 oro | Intel enemigo</span>
+        </button>
+        <button class="action-btn danger" onclick="doAction('purge')">
+          <span class="a-icon">⚔️</span>
+          <span class="a-name">PURGAR DISIDENTES</span>
+          <span class="a-cost">+30 control | -20 satisf.</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📜</span> Crónicas del Reino</div>
+      <div class="event-log" id="eventLog">
+        <div class="event-entry success">
+          <div class="event-turn">Año 1 — Fundación</div>
+          El reino de las Sombras se alza desde las cenizas de un mundo corrompido. Vuestro linaje reclamará lo que es suyo.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Random events & Advisor -->
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-title"><span class="icon">🧙</span> Consejero Oscuro</div>
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+        <div class="portrait">🧙‍♂️</div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--parchment);letter-spacing:1px">MAGISTER VORNATH</div>
+          <div style="font-size:0.6rem;color:var(--text-dim);font-style:italic;font-family:'IM Fell English',serif;line-height:1.5" id="advisorText">
+            "Mi señor, nuestras arcas crecen lentamente. Considerad expandir las minas al norte, o el enemigo os tomará ventaja antes de que suenen los cuervos."
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><span class="icon">⚠️</span> Eventos Pendientes</div>
+      <div id="eventCards">
+        <div class="building-item" onclick="resolveEvent(0)">
+          <div class="building-icon">⚔️</div>
+          <div class="building-info">
+            <div class="building-name">RAID BÁRBARO</div>
+            <div class="building-desc">Saqueadores atacan la frontera norte. Debéis actuar.</div>
+            <div class="building-level" style="color:var(--crimson)">¡URGENTE!</div>
+          </div>
+        </div>
+        <div class="building-item" onclick="resolveEvent(1)">
+          <div class="building-icon">🌾</div>
+          <div class="building-info">
+            <div class="building-name">MALA COSECHA</div>
+            <div class="building-desc">Las aldeas del sur reportan escasez de trigo.</div>
+            <div class="building-level">Moderado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: CONSTRUCCIÓN -->
+<div id="tab-build" class="tab-panel">
+<div class="main">
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📊</span> Producción Actual</div>
+      <div class="stat-row"><div class="stat-label">Oro/año</div><div class="stat-bar"><div class="stat-fill gold-fill" style="width:55%"></div></div><div class="stat-val" id="prodGold">+85</div></div>
+      <div class="stat-row"><div class="stat-label">Grano/año</div><div class="stat-bar"><div class="stat-fill green-fill" style="width:40%"></div></div><div class="stat-val" id="prodFood">+60</div></div>
+      <div class="stat-row"><div class="stat-label">Madera/año</div><div class="stat-bar"><div class="stat-fill blue-fill" style="width:30%"></div></div><div class="stat-val" id="prodWood">+40</div></div>
+      <div class="stat-row"><div class="stat-label">Hierro/año</div><div class="stat-bar"><div class="stat-fill red-fill" style="width:25%"></div></div><div class="stat-val" id="prodIron">+20</div></div>
+
+      <hr class="modal-divider">
+      <div style="font-size:0.65rem;color:var(--parchment);margin-bottom:6px">CAPACIDADES</div>
+      <div style="font-size:0.6rem;color:var(--text-dim);line-height:2">
+        🏰 Castillo: Niv. <span id="lvlCastle">1</span><br>
+        🏘️ Aldeas: <span id="lvlVillages">3</span>/10<br>
+        ⛏️ Minas: Niv. <span id="lvlMine">0</span><br>
+        🌲 Aserraderos: Niv. <span id="lvlLumber">0</span><br>
+        🔮 Torre Mágica: Niv. <span id="lvlTower">0</span><br>
+        ⚔️ Herrería: Niv. <span id="lvlSmith">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🏗️</span> Construir & Mejorar</div>
+      <div id="buildingsList"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">💡</span> Efectos de Edificios</div>
+      <div style="font-family:'IM Fell English',serif;font-style:italic;font-size:0.7rem;color:var(--text-light);line-height:2">
+        <div>🏰 <b>Castillo</b> mejorado → más defensas y capacidad de ejército</div>
+        <div>⚔️ <b>Herrería</b> → unidades más baratas y fuertes</div>
+        <div>🌲 <b>Aserradero</b> → madera automática cada año</div>
+        <div>⛏️ <b>Mina</b> → hierro para ejércitos y construcción</div>
+        <div>🔮 <b>Torre Mágica</b> → maná y habilidades arcanas</div>
+        <div>🏘️ <b>Aldeas</b> → más población, grano y oro base</div>
+        <div>⛪ <b>Templo</b> → mayor satisfacción del pueblo</div>
+        <div>📚 <b>Biblioteca</b> → permite investigaciones avanzadas</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: EJÉRCITO -->
+<div id="tab-army" class="tab-panel">
+<div class="main">
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🛡️</span> Fuerza Total</div>
+      <div class="big-stat">
+        <span class="big-val" id="totalForce">120</span>
+        <span class="big-label">GUERREROS</span>
+      </div>
+      <hr class="modal-divider">
+      <div class="stat-row"><div class="stat-label">ATAQUE</div><div class="stat-bar"><div class="stat-fill red-fill" id="atkBar" style="width:30%"></div></div><div class="stat-val" id="atkVal">30</div></div>
+      <div class="stat-row"><div class="stat-label">DEFENSA</div><div class="stat-bar"><div class="stat-fill blue-fill" id="defBar" style="width:25%"></div></div><div class="stat-val" id="defVal">25</div></div>
+      <div class="stat-row"><div class="stat-label">MORAL</div><div class="stat-bar"><div class="stat-fill green-fill" id="moraleBar" style="width:60%"></div></div><div class="stat-val" id="moraleVal">60%</div></div>
+
+      <hr class="modal-divider">
+      <div style="font-size:0.6rem;color:var(--text-dim)">Coste mantenimiento:</div>
+      <div style="font-size:0.8rem;color:var(--crimson)">-<span id="upkeep">24</span> oro/año</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">⚔️</span> Reclutar Tropas</div>
+      <div id="armyList"></div>
+      <hr class="modal-divider">
+      <button class="action-btn danger" style="width:100%;padding:10px" onclick="showModal('attack')">
+        <span class="a-icon">🗡️</span>
+        <span class="a-name">LANZAR ATAQUE</span>
+        <span class="a-cost">Conquistar territorios enemigos</span>
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📋</span> Doctrina Militar</div>
+      <div style="font-family:'IM Fell English',serif;font-style:italic;font-size:0.7rem;color:var(--text-light);line-height:2">
+        <div style="color:var(--gold);font-style:normal;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:1px">UNIDADES DISPONIBLES</div>
+        <br>
+        🗡️ Aldeano Armado: Bajo coste. Poca efectividad.<br>
+        ⚔️ Soldado de Línea: Tropa estándar. Versátil.<br>
+        🏇 Caballería Negra: Costosa. Letal en campo abierto.<br>
+        🏹 Arquero Oscuro: Ventaja a distancia.<br>
+        🔮 Hechicero: Usa maná. Muy potente.<br>
+        💀 Muerto Viviente: Gratis con magia. No come.
+      </div>
+
+      <hr class="modal-divider">
+      <div style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px">VICTORIAS EN BATALLA</div>
+      <div style="font-size:1.5rem;color:var(--gold);text-align:center" id="battlesWon">0</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: SABERES -->
+<div id="tab-research" class="tab-panel">
+<div class="main">
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📚</span> Progreso</div>
+      <div class="stat-row"><div class="stat-label">TECN.</div><div class="stat-bar"><div class="stat-fill blue-fill" id="techBar" style="width:10%"></div></div><div class="stat-val" id="techVal">10%</div></div>
+      <div class="stat-row"><div class="stat-label">MAGIA</div><div class="stat-bar"><div class="stat-fill gold-fill" id="magResBar" style="width:5%"></div></div><div class="stat-val" id="magResVal">5%</div></div>
+      <hr class="modal-divider">
+      <div style="font-size:0.6rem;color:var(--text-dim)">Saberes Conocidos: <span id="researchCount" style="color:var(--gold)">0</span></div>
+      <div style="font-size:0.6rem;color:var(--text-dim);margin-top:4px">Bibliotecas: <span id="libCount" style="color:var(--parchment)">0</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🔬</span> Árbol de Saberes</div>
+      <div id="researchList"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">✨</span> Beneficios</div>
+      <div style="font-family:'IM Fell English',serif;font-style:italic;font-size:0.7rem;color:var(--text-light);line-height:2" id="researchBenefits">
+        <div style="color:var(--text-dim)">Investiga saberes para desbloquear poderes...</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: DIPLOMACIA -->
+<div id="tab-diplo" class="tab-panel">
+<div class="main">
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🌍</span> Posición Global</div>
+      <div class="big-stat">
+        <span class="big-val" id="globalRank">#4</span>
+        <span class="big-label">RANGO EN EL MUNDO</span>
+      </div>
+      <hr class="modal-divider">
+      <div class="stat-row"><div class="stat-label">REPUTACIÓN</div><div class="stat-bar"><div class="stat-fill gold-fill" id="repBar" style="width:40%"></div></div><div class="stat-val" id="repVal">40</div></div>
+      <div class="stat-row"><div class="stat-label">TERROR</div><div class="stat-bar"><div class="stat-fill red-fill" id="terrorBar" style="width:30%"></div></div><div class="stat-val" id="terrorVal">30</div></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🤝</span> Facciones</div>
+      <div id="factionsList"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📰</span> Noticias del Mundo</div>
+      <div id="worldNews" style="font-family:'IM Fell English',serif;font-style:italic;font-size:0.7rem;color:var(--text-light);line-height:1.8">
+        <div style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px">
+          <div style="color:var(--text-dim);font-size:0.55rem">Año 1</div>
+          El Imperio del Alba declara nuevos tributos sobre las rutas comerciales del este.
+        </div>
+        <div style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px">
+          <div style="color:var(--text-dim);font-size:0.55rem">Año 1</div>
+          Rumores de una bestia antigua despertando en las montañas Grises.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Título</div>
+    <div class="modal-text" id="modalText">Texto del modal.</div>
+    <hr class="modal-divider">
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════
+const G = {
+  turn: 1,
+  resources: { gold: 500, food: 300, wood: 200, iron: 100, mana: 50 },
+  stats: { population: 4500, happiness: 70, militaryPower: 30, magic: 20, tech: 10, reputation: 40, terror: 30 },
+  buildings: { castle: 1, villages: 3, mine: 0, lumber: 0, tower: 0, smith: 0, temple: 0, library: 0 },
+  army: { peasants: 50, soldiers: 40, cavalry: 10, archers: 20, mages: 0, undead: 0 },
+  territories: 3,
+  battlesWon: 0,
+  actionsLeft: 3,
+  research: [],
+  events: [],
+};
+
+const unitDef = [
+  { id:'peasants', icon:'🗡️', name:'Aldeano Armado', atk:1, def:1, food:0.1, cost:{gold:10,food:5}, upkeep:0.1 },
+  { id:'soldiers', icon:'⚔️', name:'Soldado de Línea', atk:3, def:3, food:0.2, cost:{gold:30,food:10,iron:5}, upkeep:0.3 },
+  { id:'cavalry', icon:'🏇', name:'Caballería Negra', atk:8, def:4, food:0.5, cost:{gold:80,iron:15}, upkeep:0.8 },
+  { id:'archers', icon:'🏹', name:'Arquero Oscuro', atk:5, def:2, food:0.2, cost:{gold:40,wood:10}, upkeep:0.4 },
+  { id:'mages', icon:'🔮', name:'Hechicero', atk:10, def:2, food:0, cost:{gold:100,mana:20}, upkeep:1 },
+  { id:'undead', icon:'💀', name:'Muerto Viviente', atk:4, def:4, food:0, cost:{mana:15}, upkeep:0.2 },
+];
+
+const buildingsDef = [
+  { id:'castle', icon:'🏰', name:'Castillo', desc:'Fortaleza central. Mejora defensa y capacidad.', costs:[{gold:200,wood:100},{gold:400,wood:200,iron:100},{gold:800,stone:300,iron:200}], effects:'Defensa +20 por nivel. Ejército cap +50.' },
+  { id:'villages', icon:'🏘️', name:'Aldea', desc:'Nuevos asentamientos. Más gente, más producción.', costs:[{gold:80,wood:50},{gold:80,wood:50},{gold:80,wood:50},{gold:80,wood:50}], effects:'+500 pop, +15 oro/año, +10 grano/año por aldea.' },
+  { id:'mine', icon:'⛏️', name:'Mina', desc:'Extrae hierro y otros minerales preciosos.', costs:[{gold:150,wood:80},{gold:300,wood:150,iron:50},{gold:600,iron:100}], effects:'+20 hierro/año por nivel.' },
+  { id:'lumber', icon:'🌲', name:'Aserradero', desc:'Tala controlada de los bosques oscuros.', costs:[{gold:100,wood:50},{gold:200,wood:100},{gold:400,wood:200}], effects:'+30 madera/año por nivel.' },
+  { id:'tower', icon:'🔮', name:'Torre Arcana', desc:'Capta energías mágicas del éter.', costs:[{gold:200,wood:100,mana:30},{gold:400,iron:50,mana:60},{gold:800,iron:100,mana:100}], effects:'+15 maná/año por nivel.' },
+  { id:'smith', icon:'⚔️', name:'Herrería', desc:'Forja de armas y armaduras para el ejército.', costs:[{gold:120,iron:60},{gold:250,iron:120},{gold:500,iron:250}], effects:'Unidades -20% coste por nivel.' },
+  { id:'temple', icon:'⛪', name:'Templo Oscuro', desc:'Lugar de culto que calma al pueblo.', costs:[{gold:150,wood:70,mana:20},{gold:300,wood:140,mana:40},{gold:600,mana:80}], effects:'+10% satisfacción por nivel.' },
+  { id:'library', icon:'📚', name:'Biblioteca Arcana', desc:'Permite investigaciones avanzadas.', costs:[{gold:250,wood:120,mana:40},{gold:500,iron:80,mana:80}], effects:'Permite investigar saberes ocultos.' },
+];
+
+const researchDef = [
+  { id:'r_iron', icon:'⚒️', name:'Metalurgia Avanzada', desc:'Mejora la calidad del hierro y reducción de costes.', cost:{gold:200,mana:30}, req:[], effect:'+25% producción hierro, ejército -10% coste.' },
+  { id:'r_agr', icon:'🌾', name:'Agricultura Oscura', desc:'Cosechas potenciadas por magia negra.', cost:{gold:150,mana:20}, req:[], effect:'+30 grano/año extra.' },
+  { id:'r_nec', icon:'💀', name:'Nigromancia', desc:'Arte de levantar a los muertos para la guerra.', cost:{gold:300,mana:80}, req:['r_iron'], effect:'Muertos vivientes disponibles.' },
+  { id:'r_alchemy', icon:'⚗️', name:'Alquimia', desc:'Transmutar recursos en oro.', cost:{gold:250,mana:50}, req:['r_agr'], effect:'Acción de transmutación disponible.' },
+  { id:'r_siege', icon:'🏹', name:'Maquinaria de Asedio', desc:'Catapultas y arietes para asedios.', cost:{gold:350,wood:150,iron:100}, req:['r_iron'], effect:'+40% daño en ataque.' },
+  { id:'r_shadow', icon:'🌑', name:'Magia de Sombras', desc:'Artes oscuras para espionaje y control.', cost:{gold:400,mana:100}, req:['r_nec'], effect:'Hechiceros +50% poder.' },
+];
+
+const factionsDef = [
+  { id:'alba', icon:'☀️', name:'Imperio del Alba', relation:'neutral', power:2800 },
+  { id:'iron', icon:'⚙️', name:'República del Hierro', relation:'ally', power:1500 },
+  { id:'forest', icon:'🌲', name:'Concilio del Bosque', relation:'neutral', power:900 },
+  { id:'hordes', icon:'🐴', name:'Hordas del Este', relation:'hostile', power:2200 },
+  { id:'undead', icon:'💀', name:'Reino Eterno de Keth', relation:'war', power:1800 },
+];
+
+const mapData = [
+  { name:'Pico Negro', type:'mountain', owned:false, icon:'🏔️' },
+  { name:'Bosque Sombrío', type:'forest', owned:false, icon:'🌲' },
+  { name:'Llanura Muerta', type:'plain', owned:false, icon:'🌾' },
+  { name:'Fortaleza Keth', type:'enemy_fort', owned:false, icon:'💀', enemy:true },
+  { name:'Aldea Perdida', type:'village', owned:false, icon:'🏘️' },
+  { name:'Minas del Sur', type:'mine', owned:true, icon:'⛏️' },
+  { name:'TRONO OSCURO', type:'capital', owned:true, icon:'🏰', capital:true },
+  { name:'Puerto de Sombra', type:'port', owned:true, icon:'⚓' },
+  { name:'Valle Rojo', type:'plain', owned:false, icon:'🌋' },
+  { name:'Ruinas de Kel', type:'ruins', owned:false, icon:'🏚️' },
+  { name:'Pantano Eterno', type:'swamp', owned:false, icon:'🌿' },
+  { name:'Cruce del Cuervo', type:'plain', owned:false, icon:'🛤️' },
+  { name:'Isla de Ceniza', type:'island', owned:false, icon:'🏝️' },
+  { name:'Cueva de Dragón', type:'cave', owned:false, icon:'🐲' },
+  { name:'Aldea del Norte', type:'village', owned:false, icon:'🏘️' },
+  { name:'Torre Guardiana', type:'fort', owned:false, icon:'🗼' },
+  { name:'Imperio del Alba', type:'enemy_empire', owned:false, icon:'☀️', enemy:true },
+  { name:'Montaña Sagrada', type:'mountain', owned:false, icon:'⛰️' },
+  { name:'Forja Maldita', type:'forge', owned:false, icon:'🔥' },
+  { name:'Desierto Gris', type:'desert', owned:false, icon:'🏜️' },
+];
+
+const advisorMessages = [
+  "\"Las arcas necesitan atención, mi señor. Sin oro, ni el más leal de los ejércitos permanece fiel.\"",
+  "\"El Imperio del Alba observa vuestros movimientos. Proceded con cautela.\"",
+  "\"Un reino sin espías es un reino ciego. Invertid en inteligencia.\"",
+  "\"Las hordas se acercan del este. Reforzad la frontera antes de que lleguen las nieves.\"",
+  "\"La magia oscura puede ser nuestra mayor ventaja. Construid la torre.\"",
+  "\"El pueblo necesita pan y espectáculo para no rebelarse. No lo olvidéis.\"",
+  "\"Un aliado de hoy puede ser el traidor de mañana. Mantened vuestros secretos bien guardados.\"",
+  "\"Las ruinas al norte guardan tesoros de civilizaciones extintas. Exploradlas.\"",
+];
+
+const randomEvents = [
+  { title:'RAID BÁRBARO', icon:'⚔️', desc:'Saqueadores atacan la frontera norte.', type:'warning', effect:()=>{ addEvent('Los bárbaros saquean una aldea. -50 oro, -30 grano.','warning'); G.resources.gold-=50; G.resources.food-=30; refresh(); } },
+  { title:'MALA COSECHA', icon:'🌾', desc:'Las aldeas del sur reportan escasez de trigo.', type:'warning', effect:()=>{ addEvent('Mala cosecha. -40 grano.','warning'); G.resources.food-=40; refresh(); } },
+  { title:'MERCADER MISTERIOSO', icon:'💼', desc:'Un mercader ofrece bienes exóticos a bajo precio.', type:'info', effect:()=>{ addEvent('El mercader os deja un cofre. +80 oro, +30 hierro.','success'); G.resources.gold+=80; G.resources.iron+=30; refresh(); } },
+  { title:'FESTIVAL OSCURO', icon:'🎭', desc:'Los aldeanos celebran el Festival de las Sombras.', type:'info', effect:()=>{ addEvent('El festival eleva la moral. +10 satisfacción.','success'); G.stats.happiness=Math.min(100,G.stats.happiness+10); refresh(); } },
+  { title:'ESPÍA CAPTURADO', icon:'🕵️', desc:'Vuestros hombres capturan un agente enemigo.', type:'warning', effect:()=>{ addEvent('Espía capturado. Información valiosa obtenida. +20 reputación.','success'); G.stats.reputation=Math.min(100,G.stats.reputation+20); refresh(); } },
+  { title:'PLAGA EN LAS ALDEAS', icon:'☠️', desc:'Una enfermedad misteriosa se extiende.', type:'warning', effect:()=>{ addEvent('La plaga reduce la población. -500 pop, -15 satisfacción.','warning'); G.stats.population-=500; G.stats.happiness-=15; refresh(); } },
+  { title:'TORMENTA MÁGICA', icon:'⚡', desc:'Energías arcanas inestables sacuden el reino.', type:'warning', effect:()=>{ addEvent('La tormenta mágica libera energía. +40 maná.','success'); G.resources.mana+=40; refresh(); } },
+  { title:'EMBAJADOR DEL NORTE', icon:'🏳️', desc:'Un emisario llega con propuesta comercial.', type:'info', effect:()=>{ addEvent('Tratado comercial: +30 oro/año permanente.','success'); G.resources.gold+=60; refresh(); } },
+];
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init() {
+  renderMap();
+  renderBuildings();
+  renderArmy();
+  renderResearch();
+  renderFactions();
+  refresh();
+  generateEvents();
+}
+
+function refresh() {
+  // Resources
+  document.getElementById('resGold').textContent = Math.max(0,Math.floor(G.resources.gold));
+  document.getElementById('resFood').textContent = Math.max(0,Math.floor(G.resources.food));
+  document.getElementById('resWood').textContent = Math.max(0,Math.floor(G.resources.wood));
+  document.getElementById('resIron').textContent = Math.max(0,Math.floor(G.resources.iron));
+  document.getElementById('resMana').textContent = Math.max(0,Math.floor(G.resources.mana));
+
+  // Turn
+  document.getElementById('turnYear').textContent = G.turn;
+
+  // Stats bars
+  setBar('popBar','popVal', G.stats.population/10000*100, Math.floor(G.stats.population/1000)+'k');
+  setBar('happyBar','happyVal', G.stats.happiness, G.stats.happiness+'%');
+  setBar('milBar','milVal', G.stats.militaryPower, G.stats.militaryPower+'%');
+  setBar('magBar','magVal', G.stats.magic, G.stats.magic+'%');
+
+  // Kingdom summary
+  document.getElementById('territoriesCount').textContent = G.territories;
+  document.getElementById('armyCount').textContent = totalArmy();
+  document.getElementById('incomeCount').textContent = '+' + calcIncome().gold;
+  document.getElementById('powerScore').textContent = calcPower();
+
+  // Army tab
+  document.getElementById('totalForce').textContent = totalArmy();
+  const atk = calcAtk(), def = calcDef();
+  setBar('atkBar','atkVal', Math.min(100,atk), atk);
+  setBar('defBar','defVal', Math.min(100,def), def);
+  setBar('moraleBar','moraleVal', G.stats.happiness, G.stats.happiness+'%');
+  document.getElementById('upkeep').textContent = calcUpkeep();
+  document.getElementById('battlesWon').textContent = G.battlesWon;
+
+  // Diplomacy
+  setBar('repBar','repVal', G.stats.reputation, G.stats.reputation);
+  setBar('terrorBar','terrorVal', G.stats.terror, G.stats.terror);
+
+  // Production panel
+  const inc = calcIncome();
+  document.getElementById('prodGold').textContent = '+' + inc.gold;
+  document.getElementById('prodFood').textContent = '+' + inc.food;
+  document.getElementById('prodWood').textContent = '+' + inc.wood;
+  document.getElementById('prodIron').textContent = '+' + inc.iron;
+  document.getElementById('lvlCastle').textContent = G.buildings.castle;
+  document.getElementById('lvlVillages').textContent = G.buildings.villages;
+  document.getElementById('lvlMine').textContent = G.buildings.mine;
+  document.getElementById('lvlLumber').textContent = G.buildings.lumber;
+  document.getElementById('lvlTower').textContent = G.buildings.tower;
+  document.getElementById('lvlSmith').textContent = G.buildings.smith;
+
+  // Research
+  setBar('techBar','techVal', G.stats.tech, G.stats.tech+'%');
+  setBar('magResBar','magResVal', G.stats.magic, G.stats.magic+'%');
+  document.getElementById('researchCount').textContent = G.research.length;
+  document.getElementById('libCount').textContent = G.buildings.library;
+
+  updateAdvisor();
+  updateGlobalRank();
+}
+
+function setBar(barId, valId, pct, val) {
+  const bar = document.getElementById(barId);
+  const v = document.getElementById(valId);
+  if (bar) bar.style.width = Math.max(0,Math.min(100,pct)) + '%';
+  if (v) v.textContent = val;
+}
+
+// ═══════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════
+function totalArmy() {
+  return Object.values(G.army).reduce((a,b) => a+b, 0);
+}
+
+function calcAtk() {
+  return unitDef.reduce((t,u) => t + G.army[u.id] * u.atk, 0);
+}
+
+function calcDef() {
+  return unitDef.reduce((t,u) => t + G.army[u.id] * u.def, 0) + G.buildings.castle * 20;
+}
+
+function calcUpkeep() {
+  return Math.floor(unitDef.reduce((t,u) => t + G.army[u.id] * u.upkeep * 10, 0));
+}
+
+function calcIncome() {
+  const smithBonus = 1 - G.buildings.smith * 0;
+  return {
+    gold: 50 + G.buildings.villages * 15 + G.territories * 20,
+    food: 20 + G.buildings.villages * 10,
+    wood: 10 + G.buildings.lumber * 30,
+    iron: 5 + G.buildings.mine * 20,
+    mana: G.buildings.tower * 15,
+  };
+}
+
+function calcPower() {
+  return Math.floor(calcAtk() * 3 + calcDef() * 2 + G.territories * 100 + G.buildings.castle * 50);
+}
+
+function updateAdvisor() {
+  if (G.turn % 3 === 0) {
+    document.getElementById('advisorText').textContent = advisorMessages[G.turn % advisorMessages.length];
+  }
+}
+
+function updateGlobalRank() {
+  const power = calcPower();
+  let rank = 5;
+  if (power > 3000) rank = 1;
+  else if (power > 2000) rank = 2;
+  else if (power > 1200) rank = 3;
+  else if (power > 600) rank = 4;
+  document.getElementById('globalRank').textContent = '#' + rank;
+}
+
+// ═══════════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════════
+function renderMap() {
+  const grid = document.getElementById('mapGrid');
+  grid.innerHTML = '';
+  mapData.forEach((cell, i) => {
+    const div = document.createElement('div');
+    div.className = 'map-cell ' + (cell.capital ? 'capital' : cell.owned ? 'owned' : cell.enemy ? 'enemy' : 'neutral');
+    div.innerHTML = `${cell.icon}<div class="cell-label">${cell.name}</div>`;
+    div.onclick = () => clickCell(i);
+    div.title = cell.name;
+    grid.appendChild(div);
+  });
+}
+
+function clickCell(i) {
+  const cell = mapData[i];
+  if (cell.capital) {
+    showInfo('Trono Oscuro', '⚔️ Vuestra capital inexpugnable. Cae esta ciudad, cae el reino.\n\nDefensa total: ' + calcDef() + ' | Soldados dentro: ' + totalArmy());
+    return;
+  }
+  if (cell.owned) {
+    showInfo(cell.name, '✅ Este territorio os pertenece.\n\nAportación: +' + (G.territories > 0 ? 20 : 0) + ' oro/año al reino.');
+    return;
+  }
+  if (cell.enemy) {
+    showModal('confirmAttack', i);
+    return;
+  }
+  // Neutral - can annex
+  showModal('annex', i);
+}
+
+// ═══════════════════════════════════════════
+// BUILDINGS
+// ═══════════════════════════════════════════
+function renderBuildings() {
+  const list = document.getElementById('buildingsList');
+  list.innerHTML = '';
+  buildingsDef.forEach(b => {
+    const lvl = G.buildings[b.id] || 0;
+    const maxLvl = b.costs.length;
+    const canUpgrade = lvl < maxLvl;
+    const cost = canUpgrade ? b.costs[lvl] : null;
+    const div = document.createElement('div');
+    div.className = 'building-item';
+    div.innerHTML = `
+      <div class="building-icon">${b.icon}</div>
+      <div class="building-info">
+        <div class="building-name">${b.name} <span style="color:var(--gold)">${'★'.repeat(lvl)}${'☆'.repeat(maxLvl-lvl)}</span></div>
+        <div class="building-desc">${b.desc}</div>
+        <div class="building-level" style="color:var(--text-dim)">${b.effects}</div>
+      </div>
+      <button class="build-btn" ${!canUpgrade?'disabled':''} onclick="buildBuilding('${b.id}')">
+        ${canUpgrade ? (lvl===0?'Construir':'Mejorar')+'<br><span style="color:var(--gold-dim);font-size:0.5rem">'+formatCost(cost)+'</span>' : 'MAX'}
+      </button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function formatCost(cost) {
+  return Object.entries(cost).map(([k,v]) => `${v}${k==='gold'?'💰':k==='wood'?'🪵':k==='iron'?'⚙️':k==='mana'?'🔮':'?'}`).join(' ');
+}
+
+function buildBuilding(id) {
+  const b = buildingsDef.find(b => b.id === id);
+  const lvl = G.buildings[id] || 0;
+  if (lvl >= b.costs.length) return;
+  const cost = b.costs[lvl];
+  if (!canAfford(cost)) { addEvent('Recursos insuficientes para ' + b.name + '.','warning'); return; }
+  payCost(cost);
+  G.buildings[id] = (G.buildings[id] || 0) + 1;
+  addEvent(`✅ ${b.icon} ${b.name} ${lvl===0?'construido':'mejorado a nivel '+(lvl+1)}.`,'success');
+  renderBuildings();
+  refresh();
+}
+
+function canAfford(cost) {
+  return Object.entries(cost).every(([k,v]) => (G.resources[k]||0) >= v);
+}
+
+function payCost(cost) {
+  Object.entries(cost).forEach(([k,v]) => G.resources[k] -= v);
+}
+
+// ═══════════════════════════════════════════
+// ARMY
+// ═══════════════════════════════════════════
+function renderArmy() {
+  const list = document.getElementById('armyList');
+  list.innerHTML = '';
+  unitDef.forEach(u => {
+    const div = document.createElement('div');
+    div.className = 'unit-row';
+    div.innerHTML = `
+      <div class="unit-left">
+        <div class="unit-icon">${u.icon}</div>
+        <div>
+          <div class="unit-name">${u.name}</div>
+          <div class="unit-cost">${formatCost(u.cost)} | Atq:${u.atk} Def:${u.def}</div>
+        </div>
+      </div>
+      <div class="unit-count">${G.army[u.id]}</div>
+      <button class="recruit-btn" onclick="recruit('${u.id}')">+5</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function recruit(id) {
+  const u = unitDef.find(u => u.id === id);
+  if (u.id === 'undead' && !G.research.includes('r_nec')) {
+    addEvent('Necesitáis aprender Nigromancia primero.','warning');
+    return;
+  }
+  const cost = {};
+  Object.entries(u.cost).forEach(([k,v]) => cost[k] = v * 5);
+  if (!canAfford(cost)) { addEvent('Recursos insuficientes para reclutar.','warning'); return; }
+  payCost(cost);
+  G.army[id] += 5;
+  addEvent(`${u.icon} Reclutados 5 ${u.name}.`,'success');
+  renderArmy();
+  refresh();
+}
+
+// ═══════════════════════════════════════════
+// RESEARCH
+// ═══════════════════════════════════════════
+function renderResearch() {
+  const list = document.getElementById('researchList');
+  list.innerHTML = '';
+  researchDef.forEach(r => {
+    const done = G.research.includes(r.id);
+    const reqMet = r.req.every(req => G.research.includes(req));
+    const div = document.createElement('div');
+    div.className = 'research-item' + (done?' researched':'');
+    div.innerHTML = `
+      <div class="r-icon">${r.icon}</div>
+      <div class="r-info">
+        <div class="r-name">${r.name}</div>
+        <div class="r-desc">${r.desc}</div>
+        <div class="r-cost">${done?'':'Coste: '+formatCost(r.cost)}</div>
+        ${r.req.length?`<div style="font-size:0.5rem;color:var(--text-dim)">Req: ${r.req.join(', ')}</div>`:''}
+      </div>
+      ${done ? '<div class="r-done">✓ Conocido</div>' : `<button class="recruit-btn" ${!reqMet?'disabled':''} onclick="doResearch('${r.id}')">Estudiar</button>`}
+    `;
+    list.appendChild(div);
+  });
+
+  // Update benefits
+  const benefits = document.getElementById('researchBenefits');
+  if (G.research.length === 0) {
+    benefits.innerHTML = '<div style="color:var(--text-dim)">Investiga saberes para desbloquear poderes...</div>';
+  } else {
+    benefits.innerHTML = G.research.map(id => {
+      const r = researchDef.find(r=>r.id===id);
+      return `<div>${r.icon} <b>${r.name}</b>: ${r.effect}</div>`;
+    }).join('');
+  }
+}
+
+function doResearch(id) {
+  const r = researchDef.find(r => r.id === id);
+  if (!canAfford(r.cost)) { addEvent('Recursos insuficientes para investigar.','warning'); return; }
+  if (G.buildings.library === 0 && id !== 'r_iron' && id !== 'r_agr') {
+    addEvent('Necesitáis una Biblioteca Arcana para investigar esto.','warning');
+    return;
+  }
+  payCost(r.cost);
+  G.research.push(id);
+  G.stats.tech = Math.min(100, G.stats.tech + 10);
+  G.stats.magic = Math.min(100, G.stats.magic + 5);
+  addEvent(`📚 Saber descubierto: ${r.name}. ${r.effect}`,'success');
+  renderResearch();
+  renderArmy();
+  refresh();
+}
+
+// ═══════════════════════════════════════════
+// FACTIONS
+// ═══════════════════════════════════════════
+function renderFactions() {
+  const list = document.getElementById('factionsList');
+  list.innerHTML = '';
+  factionsDef.forEach((f, i) => {
+    const relClass = { ally:'rel-ally', neutral:'rel-neutral', hostile:'rel-hostile', war:'rel-war' }[f.relation];
+    const relName = { ally:'ALIADO', neutral:'NEUTRAL', hostile:'HOSTIL', war:'⚔ GUERRA' }[f.relation];
+    const div = document.createElement('div');
+    div.className = 'faction-card';
+    div.innerHTML = `
+      <div class="faction-name">${f.icon} ${f.name} <span style="font-size:0.55rem;color:var(--text-dim)">Poder: ${f.power}</span><span class="faction-rel ${relClass}">${relName}</span></div>
+      <div class="faction-actions">
+        <button class="diplo-btn" onclick="diplo('gift',${i})">🎁 Enviar regalo</button>
+        <button class="diplo-btn" onclick="diplo('alliance',${i})">🤝 Alianza</button>
+        <button class="diplo-btn" onclick="diplo('trade',${i})">💹 Comercio</button>
+        <button class="diplo-btn" onclick="diplo('threaten',${i})" style="color:var(--crimson)">⚔ Amenazar</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function diplo(action, fi) {
+  const f = factionsDef[fi];
+  const actions = {
+    gift: ()=>{ if(G.resources.gold<100){addEvent('Sin oro para el regalo.','warning');return;} G.resources.gold-=100; addEvent(`🎁 Enviado regalo a ${f.name}. Relaciones mejoradas.`,'success'); improveRelation(fi); },
+    alliance: ()=>{ if(G.resources.gold<200){addEvent('Sin oro.','warning');return;} G.resources.gold-=200; addEvent(`🤝 Propuesta de alianza a ${f.name}.`,'info'); if(Math.random()>0.5) { factionsDef[fi].relation='ally'; addEvent(`✅ ${f.name} acepta la alianza!`,'success'); renderFactions(); } else addEvent(`❌ ${f.name} rechaza la alianza.`,'warning'); },
+    trade: ()=>{ addEvent(`💹 Ruta comercial establecida con ${f.name}. +50 oro.`,'success'); G.resources.gold+=50; },
+    threaten: ()=>{ G.stats.terror=Math.min(100,G.stats.terror+10); addEvent(`⚔ Amenazaste a ${f.name}. Terror aumentó.`,'warning'); if(f.relation==='ally') factionsDef[fi].relation='neutral'; else if(f.relation==='neutral') factionsDef[fi].relation='hostile'; renderFactions(); },
+  };
+  actions[action]?.();
+  refresh();
+}
+
+function improveRelation(fi) {
+  const order = ['war','hostile','neutral','ally'];
+  const f = factionsDef[fi];
+  const idx = order.indexOf(f.relation);
+  if (idx < order.length-1) factionsDef[fi].relation = order[idx+1];
+  renderFactions();
+}
+
+// ═══════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════
+function doAction(action) {
+  const acts = {
+    tax: ()=>{
+      const amt = 50 + G.buildings.villages * 10 + G.territories * 15 + Math.floor(Math.random()*50);
+      G.resources.gold += amt;
+      G.stats.happiness = Math.max(0, G.stats.happiness - 5);
+      addEvent(`💰 Impuestos cobrados: +${amt} oro. El pueblo gruñe.`,'info');
+    },
+    feast: ()=>{
+      if(G.resources.gold < 100) { addEvent('Sin oro para el banquete.','warning'); return; }
+      G.resources.gold -= 100;
+      G.stats.happiness = Math.min(100, G.stats.happiness + 15);
+      addEvent('🍖 Gran banquete celebrado. El pueblo os adora... por ahora.','success');
+    },
+    trade: ()=>{
+      if(G.resources.gold < 50) { addEvent('Sin oro.','warning'); return; }
+      G.resources.gold -= 50;
+      G.resources.wood += 80;
+      G.resources.iron += 30;
+      addEvent('🛒 Mercado negro visitado. +80 madera, +30 hierro.','success');
+    },
+    ritual: ()=>{
+      if(G.resources.gold < 30) { addEvent('Sin oro.','warning'); return; }
+      G.resources.gold -= 30;
+      G.resources.mana += 40;
+      G.stats.magic = Math.min(100, G.stats.magic + 3);
+      addEvent('🔮 Ritual completado. El velo se adelgaza. +40 maná.','success');
+    },
+    spy: ()=>{
+      if(G.resources.gold < 80) { addEvent('Sin oro.','warning'); return; }
+      G.resources.gold -= 80;
+      const spyResults = ['Keth planea atacar en 3 temporadas.','El Imperio del Alba sufre rebeliones internas.','Las Hordas del Este se mueven al sur.','Un tesoro oculto al noreste.'];
+      addEvent('🕵️ Espía regresa: "' + spyResults[Math.floor(Math.random()*spyResults.length)] + '"','info');
+    },
+    purge: ()=>{
+      G.stats.happiness = Math.max(0, G.stats.happiness - 20);
+      G.stats.terror = Math.min(100, G.stats.terror + 15);
+      addEvent('⚔️ Disidentes purgados. El miedo reina en el reino. +15 terror, -20 satisfacción.','warning');
+    },
+  };
+  acts[action]?.();
+  refresh();
+}
+
+// ═══════════════════════════════════════════
+// END TURN
+// ═══════════════════════════════════════════
+function endTurn() {
+  G.turn++;
+  const income = calcIncome();
+  const upkeep = calcUpkeep();
+
+  G.resources.gold += income.gold - upkeep;
+  G.resources.food += income.food - Math.floor(totalArmy() * 0.1);
+  G.resources.wood += income.wood;
+  G.resources.iron += income.iron;
+  G.resources.mana += income.mana;
+
+  // Keep resources non-negative
+  Object.keys(G.resources).forEach(k => G.resources[k] = Math.max(0, G.resources[k]));
+
+  // Population growth
+  if (G.resources.food > 50) {
+    G.stats.population += Math.floor(G.stats.population * 0.02);
+  } else {
+    G.stats.population -= 200;
+    addEvent('☠️ Escasez de alimentos. La población disminuye.','warning');
+  }
+
+  // Happiness drift
+  if (G.stats.terror > 50) G.stats.happiness = Math.max(0, G.stats.happiness - 3);
+  G.stats.happiness = Math.min(100, Math.max(0, G.stats.happiness));
+
+  // Random event (40% chance)
+  if (Math.random() < 0.4) {
+    const ev = randomEvents[Math.floor(Math.random()*randomEvents.length)];
+    addEvent(`📯 EVENTO: ${ev.icon} ${ev.title} — ${ev.desc}`,'warning');
+    ev.effect();
+  }
+
+  // Enemy attack (war factions)
+  const atWarCount = factionsDef.filter(f => f.relation === 'war').length;
+  if (atWarCount > 0 && Math.random() < 0.3 * atWarCount) {
+    const casualty = Math.floor(Math.random() * 20);
+    const goldLost = Math.floor(Math.random() * 100);
+    G.resources.gold -= goldLost;
+    const units = Object.keys(G.army);
+    const u = units[Math.floor(Math.random()*units.length)];
+    G.army[u] = Math.max(0, G.army[u] - casualty);
+    addEvent(`⚔️ ¡Ataque enemigo! Perdéis ${casualty} soldados y ${goldLost} oro en la defensa.`,'warning');
+    renderArmy();
+  }
+
+  addEvent(`📅 Año ${G.turn} ha comenzado. Rentas recibidas: +${income.gold} oro, +${income.food} grano.`,'info');
+  generateEvents();
+  refresh();
+}
+
+// ═══════════════════════════════════════════
+// EVENTS panel
+// ═══════════════════════════════════════════
+function generateEvents() {
+  const cards = document.getElementById('eventCards');
+  const pool = randomEvents.slice(0, 4);
+  cards.innerHTML = '';
+  const picked = pool.slice(0, 2);
+  picked.forEach((ev, i) => {
+    const div = document.createElement('div');
+    div.className = 'building-item';
+    div.innerHTML = `<div class="building-icon">${ev.icon}</div><div class="building-info"><div class="building-name">${ev.title}</div><div class="building-desc">${ev.desc}</div></div>`;
+    div.onclick = () => resolveEvent(i);
+    cards.appendChild(div);
+  });
+}
+
+function resolveEvent(i) {
+  const events = [
+    { title:'Raid Bárbaro', text:'Saqueadores atacan. Podéis:\n• Enviar ejército (-50 hierro, defendéis la frontera)\n• Pagar tributo (-150 oro, ellos se van)', resolve1:()=>{G.resources.iron-=50;addEvent('⚔️ El ejército repelió el raid bárbaro.','success');G.battlesWon++;refresh();}, resolve2:()=>{G.resources.gold-=150;addEvent('💰 Pagasteis tributo. Los bárbaros se retiran... por ahora.','warning');refresh();} },
+    { title:'Mala Cosecha', text:'La cosecha ha fallado. Opciones:\n• Distribuir reservas (-100 grano, +10 satisfacción)\n• Ignorar el problema (-15 satisfacción)', resolve1:()=>{G.resources.food-=100;G.stats.happiness+=10;addEvent('🌾 Distribuisteis reservas. El pueblo os bendice.','success');refresh();}, resolve2:()=>{G.stats.happiness-=15;addEvent('😡 Ignorasteis el hambre. El pueblo os maldice.','warning');refresh();} },
+  ];
+  const ev = events[Math.min(i, events.length-1)];
+  openModal(ev.title, ev.text, [
+    { label:'⚔️ Opción 1', fn: ev.resolve1 },
+    { label:'💰 Opción 2', fn: ev.resolve2 },
+    { label:'Cerrar', fn: closeModal, cls:'cancel' },
+  ]);
+}
+
+function showModal(type, data) {
+  const modals = {
+    attack: {
+      title:'⚔️ LANZAR ATAQUE',
+      text:'Seleccionad un objetivo en el mapa para atacar. Vuestro poder militar actual: ' + calcAtk() + '\n\nPor cada ataque exitoso ganaréis territorios y recursos.',
+      btns:[{label:'Atacar Reino de Keth',fn:()=>{doAttack('undead');}},{label:'Cancelar',fn:closeModal,cls:'cancel'}]
+    },
+    confirmAttack: {
+      title:'⚔️ CONQUISTAR',
+      text:`¿Atacar ${mapData[data]?.name}?\n\nVuestro ejército: ${calcAtk()} ATQ\nEnemigos estimados: ${20+Math.floor(Math.random()*40)}`,
+      btns:[{label:'¡A la batalla!',fn:()=>{attackTerritory(data);}},{label:'Retroceder',fn:closeModal,cls:'cancel'}]
+    },
+    annex: {
+      title:'🏳️ ANEXIONAR',
+      text:`¿Reclamar ${mapData[data]?.name}?\n\nCoste: 200 oro y 50 soldados\nBeneficio: +1 territorio, +20 oro/año`,
+      btns:[{label:'Reclamar',fn:()=>{annexTerritory(data);}},{label:'Cancelar',fn:closeModal,cls:'cancel'}]
+    },
+  };
+  const m = modals[type];
+  if (!m) return;
+  openModal(m.title, m.text, m.btns);
+}
+
+function attackTerritory(i) {
+  const cell = mapData[i];
+  const myAtk = calcAtk();
+  const enemyDef = 20 + Math.floor(Math.random() * 60);
+  closeModal();
+  if (myAtk > enemyDef) {
+    mapData[i].owned = true; mapData[i].enemy = false;
+    G.territories++;
+    G.battlesWon++;
+    G.resources.gold += 150;
+    G.stats.reputation = Math.min(100, G.stats.reputation + 10);
+    addEvent(`⚔️ ¡Victoria! ${cell.name} conquistado. +150 oro botín.`,'success');
+    renderMap();
+  } else {
+    const lost = Math.floor(Math.random() * 30);
+    G.army.soldiers = Math.max(0, G.army.soldiers - lost);
+    addEvent(`⚠️ Derrota en ${cell.name}. Perdéis ${lost} soldados. Retirada táctica.`,'warning');
+    renderArmy();
+  }
+  refresh();
+}
+
+function annexTerritory(i) {
+  closeModal();
+  if (G.resources.gold < 200 || totalArmy() < 50) { addEvent('Recursos o ejército insuficiente para la anexión.','warning'); return; }
+  G.resources.gold -= 200;
+  G.army.soldiers -= 10;
+  mapData[i].owned = true;
+  G.territories++;
+  addEvent(`🏳️ ${mapData[i].name} se une al reino mediante anexión pacífica.`,'success');
+  renderMap();
+  renderArmy();
+  refresh();
+}
+
+function doAttack(faction) {
+  closeModal();
+  const myAtk = calcAtk();
+  const enemy = factionsDef.find(f=>f.id===faction);
+  if (!enemy) return;
+  const success = myAtk > enemy.power * 0.3;
+  if (success) {
+    G.territories++;
+    G.battlesWon++;
+    G.resources.gold += 200;
+    enemy.power -= 200;
+    addEvent(`⚔️ ¡Victoria en batalla campal! Reino ${enemy.name} debilitado. +1 territorio.`,'success');
+  } else {
+    const lost = Math.floor(Math.random()*40);
+    G.army.soldiers = Math.max(0, G.army.soldiers - lost);
+    addEvent(`⚠️ Derrota! El ejército de ${enemy.name} es demasiado fuerte. -${lost} soldados.`,'warning');
+    renderArmy();
+  }
+  renderFactions();
+  refresh();
+}
+
+// ═══════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════
+function openModal(title, text, btns) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalText').innerHTML = text.replace(/\n/g,'<br>');
+  const btnEl = document.getElementById('modalBtns');
+  btnEl.innerHTML = '';
+  btns.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'modal-btn ' + (b.cls||'');
+    btn.textContent = b.label;
+    btn.onclick = b.fn;
+    btnEl.appendChild(btn);
+  });
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+function showInfo(title, text) {
+  openModal(title, text, [{label:'Cerrar',fn:closeModal,cls:'cancel'}]);
+}
+
+// ═══════════════════════════════════════════
+// EVENT LOG
+// ═══════════════════════════════════════════
+function addEvent(msg, type='info') {
+  const log = document.getElementById('eventLog');
+  const div = document.createElement('div');
+  div.className = 'event-entry ' + (type==='warning'?'warning':type==='success'?'success':'info');
+  div.innerHTML = `<div class="event-turn">Año ${G.turn}</div>${msg}`;
+  log.insertBefore(div, log.firstChild);
+  while (log.children.length > 20) log.removeChild(log.lastChild);
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
